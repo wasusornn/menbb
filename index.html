@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>รอบเดือน — บันทึกและคาดการณ์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F0F6; --surface:#FFFFFF; --ink:#2A2238; --muted:#6E6680; --line:#E2DEEA;
+  --period:#B3263E; --period-soft:#F6DDE2; --fertile:#2F8F83; --fertile-soft:#D8EEEA;
+  --ov:#1F6E64; --today:#2A2238;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#17131E; --surface:#221C2C; --ink:#EDE8F5; --muted:#A49CB5; --line:#352D42;
+    --period:#E2556E; --period-soft:#4A2330; --fertile:#4FBFAF; --fertile-soft:#1D3B38; --ov:#7FD8CB; --today:#EDE8F5;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17131E; --surface:#221C2C; --ink:#EDE8F5; --muted:#A49CB5; --line:#352D42;
+  --period:#E2556E; --period-soft:#4A2330; --fertile:#4FBFAF; --fertile-soft:#1D3B38; --ov:#7FD8CB; --today:#EDE8F5;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Sarabun",system-ui,"Noto Sans Thai",sans-serif;font-size:16px;line-height:1.6}
+h1,h2,h3{font-family:"Mitr","Sarabun",sans-serif;font-weight:500;margin:0;line-height:1.25}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--fertile);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+header h1{font-size:1.35rem}
+.who{color:var(--muted);font-size:.95rem}
+.icon-btn{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem}
+
+/* Ring hero */
+.hero{display:grid;place-items:center;margin:8px 0 18px;position:relative}
+.ring{width:min(78vw,300px);height:auto}
+.ring-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+.ring-center .big{font-family:"Mitr",sans-serif;font-size:3.4rem;font-weight:600;line-height:1}
+.ring-center .small{color:var(--muted);font-size:.95rem;max-width:12em}
+.status{text-align:center;font-family:"Mitr",sans-serif;font-size:1.15rem;margin:0 0 4px}
+.status-sub{text-align:center;color:var(--muted);margin:0 0 18px}
+
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:26px}
+.btn{border:none;border-radius:14px;padding:14px 12px;font-weight:600;font-size:1rem}
+.btn-primary{background:var(--period);color:#fff}
+.btn-ghost{background:var(--surface);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+.facts{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border-radius:16px;margin-bottom:26px;border:1px solid var(--line)}
+.fact{padding:14px 10px;text-align:center}
+.fact+.fact{border-left:1px solid var(--line)}
+.fact b{display:block;font-family:"Mitr",sans-serif;font-size:1.25rem;font-weight:500}
+.fact span{font-size:.82rem;color:var(--muted)}
+
+section{margin-bottom:28px}
+section>h2{font-size:1.1rem;margin-bottom:10px}
+
+/* Calendar */
+.cal{background:var(--surface);border-radius:16px;padding:14px;border:1px solid var(--line)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head h3{font-size:1.05rem}
+.nav{background:none;border:none;font-size:1.4rem;width:40px;height:40px;border-radius:50%}
+.nav:hover{background:var(--bg)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.dow{font-size:.78rem;color:var(--muted);padding-bottom:4px}
+.day{aspect-ratio:1;border:none;background:none;border-radius:50%;font-size:.95rem;position:relative;display:grid;place-items:center;padding:0}
+.day.out{visibility:hidden}
+.day.period{background:var(--period);color:#fff;font-weight:600}
+.day.pred{box-shadow:inset 0 0 0 2px var(--period);color:var(--period);font-weight:600}
+.day.fertile{background:var(--fertile-soft);color:var(--ink)}
+.day.ov{background:var(--fertile);color:#fff;font-weight:600}
+.day.today::after{content:"";position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:currentColor}
+.day.today:not(.period):not(.ov){font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:6px}
+
+/* History */
+.hist{list-style:none;margin:0;padding:0;background:var(--surface);border-radius:16px;border:1px solid var(--line)}
+.hist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px}
+.hist li+li{border-top:1px solid var(--line)}
+.hist .d{font-weight:500}
+.hist .m{font-size:.85rem;color:var(--muted)}
+.del{background:none;border:none;color:var(--muted);font-size:.85rem;padding:6px 8px;border-radius:8px}
+.del:hover{color:var(--period);background:var(--period-soft)}
+.empty{padding:18px 14px;color:var(--muted)}
+
+.foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.foot .icon-btn{background:var(--surface)}
+.note{font-size:.82rem;color:var(--muted);margin-top:14px}
+
+/* Dialog */
+dialog{border:none;border-radius:20px;padding:22px;width:min(92vw,400px);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(20,14,28,.45)}
+dialog h3{font-size:1.15rem;margin-bottom:4px}
+dialog p{color:var(--muted);margin:0 0 16px}
+.stack{display:grid;gap:8px}
+label.f{display:grid;gap:4px;font-size:.9rem;color:var(--muted);margin-bottom:12px}
+input[type=text],input[type=number],input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;opacity:0;transition:.25s;pointer-events:none;font-size:.95rem}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="title">รอบเดือน</h1>
+      <div class="who" id="who"></div>
+    </div>
+    <button class="icon-btn" id="openSettings">ตั้งค่า</button>
+  </header>
+
+  <div class="hero">
+    <svg class="ring" id="ring" viewBox="0 0 300 300" aria-hidden="true"></svg>
+    <div class="ring-center"><div><div class="big" id="ringBig">–</div><div class="small" id="ringSmall">ยังไม่มีข้อมูล</div></div></div>
+  </div>
+  <p class="status" id="status">เริ่มบันทึกวันแรกของเมนส์</p>
+  <p class="status-sub" id="statusSub">กดปุ่มด้านล่าง หรือแตะวันที่ในปฏิทิน</p>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="startToday">เมนส์มาวันนี้</button>
+    <button class="btn btn-ghost" id="endToday">เมนส์หมดวันนี้</button>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><b id="fCycle">–</b><span>รอบเฉลี่ย (วัน)</span></div>
+    <div class="fact"><b id="fLen">–</b><span>มานานเฉลี่ย (วัน)</span></div>
+    <div class="fact"><b id="fCount">0</b><span>รอบที่บันทึก</span></div>
+  </div>
+
+  <section>
+    <h2>ปฏิทิน</h2>
+    <div class="cal">
+      <div class="cal-head">
+        <button class="nav" id="prev" aria-label="เดือนก่อน">‹</button>
+        <h3 id="monthLabel"></h3>
+        <button class="nav" id="next" aria-label="เดือนถัดไป">›</button>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="legend">
+        <span><i style="background:var(--period)"></i>มาแล้ว</span>
+        <span><i style="box-shadow:inset 0 0 0 2px var(--period)"></i>คาดว่าจะมา</span>
+        <span><i style="background:var(--fertile-soft)"></i>ช่วงเจริญพันธุ์</span>
+        <span><i style="background:var(--fertile)"></i>วันตกไข่ (ประมาณ)</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>ประวัติ</h2>
+    <ul class="hist" id="hist"></ul>
+    <div class="foot">
+      <button class="icon-btn" id="addPast">เพิ่มรอบย้อนหลัง</button>
+      <button class="icon-btn" id="exportBtn">สำรองข้อมูล</button>
+      <button class="icon-btn" id="importBtn">กู้คืนข้อมูล</button>
+    </div>
+    <p class="note">ข้อมูลเก็บไว้ในเบราว์เซอร์ของเครื่องนี้เท่านั้น ไม่ถูกส่งไปที่ไหน การคาดการณ์เป็นค่าประมาณจากรอบที่ผ่านมา ไม่ควรใช้เป็นวิธีคุมกำเนิด</p>
+  </section>
+</div>
+
+<!-- Day dialog -->
+<dialog id="dayDlg">
+  <h3 id="dayTitle"></h3>
+  <p id="dayInfo"></p>
+  <div class="stack" id="dayActions"></div>
+</dialog>
+
+<!-- Settings dialog -->
+<dialog id="setDlg">
+  <h3>ตั้งค่า</h3>
+  <p>ใช้ค่าเริ่มต้นนี้จนกว่าจะบันทึกครบ 2 รอบขึ้นไป</p>
+  <label class="f">ชื่อเพื่อน<input type="text" id="sName" maxlength="30" placeholder="เช่น มิ้นท์"></label>
+  <label class="f">ความยาวรอบปกติ (วัน)<input type="number" id="sCycle" min="18" max="45"></label>
+  <label class="f">มานานกี่วันโดยปกติ<input type="number" id="sLen" min="2" max="10"></label>
+  <div class="stack">
+    <button class="btn btn-primary" id="saveSet">บันทึก</button>
+    <button class="btn btn-ghost" id="clearAll">ลบข้อมูลทั้งหมด</button>
+    <button class="btn btn-ghost" data-close>ปิด</button>
+  </div>
+</dialog>
+
+<!-- Past dialog -->
+<dialog id="pastDlg">
+  <h3>เพิ่มรอบย้อนหลัง</h3>
+  <p>ใส่วันที่เริ่มและวันที่หมด (ถ้าจำได้)</p>
+  <label class="f">วันแรก<input type="date" id="pStart"></label>
+  <label class="f">วันสุดท้าย<input type="date" id="pEnd"></label>
+  <div class="stack">
+    <button class="btn btn-primary" id="savePast">เพิ่มรอบ</button>
+    <button class="btn btn-ghost" data-close>ยกเลิก</button>
+  </div>
+</dialog>
+
+<!-- Backup dialog -->
+<dialog id="bkDlg">
+  <h3 id="bkTitle"></h3>
+  <p id="bkInfo"></p>
+  <textarea id="bkText" rows="6" style="width:100%;font:inherit;font-size:.85rem;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:10px"></textarea>
+  <div class="stack" style="margin-top:12px">
+    <button class="btn btn-primary" id="bkAction"></button>
+    <button class="btn btn-ghost" data-close>ปิด</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+const KEY='friend-cycle-v1';
+const TH_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_SHORT=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+let state={name:'',defCycle:28,defLen:5,periods:[]};
+try{const raw=localStorage.getItem(KEY); if(raw){state=Object.assign(state,JSON.parse(raw));}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast('บันทึกลงเครื่องไม่ได้ ข้อมูลจะหายเมื่อปิดหน้า');}}
+
+/* ---------- dates (YYYY-MM-DD strings) ---------- */
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c);};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return ymd(d);};
+const diff=(a,b)=>Math.round((Date.UTC(...b.split('-').map((v,i)=>i===1?v-1:+v))-Date.UTC(...a.split('-').map((v,i)=>i===1?v-1:+v)))/864e5); // b - a
+const today=()=>ymd(new Date());
+const fmt=s=>{const d=parse(s);return d.getDate()+' '+TH_SHORT[d.getMonth()]+' '+(d.getFullYear()+543);};
+
+function sorted(){return state.periods.slice().sort((a,b)=>a.start<b.start?-1:1);}
+
+/* ---------- stats & predictions ---------- */
+function stats(){
+  const p=sorted();
+  const cycles=[];
+  for(let i=1;i<p.length;i++){const c=diff(p[i-1].start,p[i].start); if(c>=15&&c<=60)cycles.push(c);}
+  const recent=cycles.slice(-6);
+  const avgCycle=recent.length?Math.round(recent.reduce((a,b)=>a+b,0)/recent.length):state.defCycle;
+  const lens=p.filter(x=>x.end).map(x=>diff(x.start,x.end)+1).filter(n=>n>=1&&n<=14).slice(-6);
+  const avgLen=lens.length?Math.round(lens.reduce((a,b)=>a+b,0)/lens.length):state.defLen;
+  const sd=recent.length>=3?Math.sqrt(recent.reduce((s,c)=>s+(c-avgCycle)**2,0)/recent.length):null;
+  return {p,cycles,avgCycle,avgLen,sd,usingDefault:recent.length===0};
+}
+function predictions(st,count=4){
+  if(!st.p.length)return [];
+  const last=st.p[st.p.length-1].start;
+  const out=[];
+  let s=addDays(last,st.avgCycle);
+  for(let i=0;i<count;i++){
+    const ov=addDays(s,-14);
+    out.push({start:s,end:addDays(s,st.avgLen-1),ov,fStart:addDays(ov,-5),fEnd:addDays(ov,1)});
+    s=addDays(s,st.avgCycle);
+  }
+  return out;
+}
+function activePeriod(){ // period with no end, started within 14 days
+  const p=sorted(); const l=p[p.length-1];
+  if(l&&!l.end&&diff(l.start,today())<=14&&diff(l.start,today())>=0)return l;
+  return null;
+}
+
+/* ---------- day classification ---------- */
+function dayMap(st,preds){
+  const m={};
+  st.p.forEach(x=>{
+    const end=x.end||(x===st.p[st.p.length-1]&&!x.end?(()=>{const e=addDays(x.start,st.avgLen-1);return diff(today(),e)>0?today():e;})():addDays(x.start,st.avgLen-1));
+    const realEnd=x.end||(diff(x.start,today())>=0&&diff(x.start,today())<st.avgLen?today():addDays(x.start,st.avgLen-1));
+    for(let d=x.start;d<=realEnd;d=addDays(d,1))m[d]='period';
+    // fertile window for logged cycle (estimated from next start)
+  });
+  // fertile windows for past cycles based on actual next start
+  for(let i=1;i<st.p.length;i++){
+    const ov=addDays(st.p[i].start,-14);
+    for(let d=addDays(ov,-5);d<=addDays(ov,1);d=addDays(d,1)) if(!m[d])m[d]=d===ov?'ov':'fertile';
+  }
+  preds.forEach(pr=>{
+    for(let d=pr.fStart;d<=pr.fEnd;d=addDays(d,1)) if(!m[d])m[d]=d===pr.ov?'ov':'fertile';
+    for(let d=pr.start;d<=pr.end;d=addDays(d,1)) if(!m[d]||m[d]!=='period')m[d]='pred';
+  });
+  return m;
+}
+
+/* ---------- render ---------- */
+let viewY=new Date().getFullYear(), viewM=new Date().getMonth();
+const $=id=>document.getElementById(id);
+
+function render(){
+  const st=stats(), preds=predictions(st), map=dayMap(st,preds), t=today();
+  $('who').textContent=state.name?'ของ '+state.name:'แตะ "ตั้งค่า" เพื่อใส่ชื่อเพื่อน';
+  $('fCycle').textContent=st.p.length?st.avgCycle:'–';
+  $('fLen').textContent=st.p.length?st.avgLen:'–';
+  $('fCount').textContent=st.p.length;
+
+  const act=activePeriod();
+  $('startToday').disabled=!!act;
+  $('endToday').disabled=!act;
+
+  // status
+  let big='–',small='ยังไม่มีข้อมูล',status='เริ่มบันทึกวันแรกของเมนส์',sub='กดปุ่มด้านล่าง หรือแตะวันที่ในปฏิทิน',dayIn=0;
+  if(st.p.length){
+    const last=st.p[st.p.length-1].start;
+    dayIn=diff(last,t)+1;
+    const next=preds[0];
+    const untilNext=diff(t,next.start);
+    if(act){
+      big=dayIn; small='วันที่ของเมนส์';
+      status='กำลังมีเมนส์ วันที่ '+dayIn;
+      sub='กด "เมนส์หมดวันนี้" เมื่อหมด';
+    }else if(untilNext>0){
+      big=untilNext; small='วันก่อนเมนส์จะมา';
+      status='คาดว่าจะมา '+fmt(next.start);
+      const ovDiff=diff(t,next.ov);
+      if(map[t]==='ov')sub='วันนี้น่าจะเป็นวันตกไข่';
+      else if(map[t]==='fertile')sub='วันนี้อยู่ในช่วงเจริญพันธุ์';
+      else if(ovDiff>0)sub='ช่วงตกไข่ประมาณ '+fmt(next.ov);
+      else sub='รอบนี้วันที่ '+dayIn+' จาก '+st.avgCycle+' วัน';
+      if(st.sd!==null&&st.sd>4)sub+=' · รอบไม่ค่อยสม่ำเสมอ อาจคลาดได้หลายวัน';
+    }else if(untilNext===0){
+      big='วันนี้'; small='คาดว่าเมนส์จะมา';
+      status='คาดว่าเมนส์จะมาวันนี้'; sub='ถ้ามาแล้ว กด "เมนส์มาวันนี้"';
+    }else{
+      big=-untilNext; small='วันที่เลยกำหนด';
+      status='เลยกำหนดมา '+(-untilNext)+' วัน';
+      sub=(-untilNext)<=7?'คลาดเคลื่อนไม่กี่วันเป็นเรื่องปกติ':'ถ้าเลยนานผิดปกติ ควรปรึกษาแพทย์';
+    }
+    if(st.usingDefault&&!act)sub+=' (ใช้รอบ '+state.defCycle+' วันไปก่อน จนกว่าจะบันทึกครบ 2 รอบ)';
+  }
+  $('ringBig').textContent=big; $('ringSmall').textContent=small;
+  $('status').textContent=status; $('statusSub').textContent=sub;
+  drawRing(st,dayIn);
+
+  // calendar
+  $('monthLabel').textContent=TH_MONTHS[viewM]+' '+(viewY+543);
+  const g=$('grid'); g.innerHTML='';
+  DOW.forEach(d=>{const e=document.createElement('div');e.className='dow';e.textContent=d;g.appendChild(e);});
+  const first=new Date(viewY,viewM,1).getDay(), days=new Date(viewY,viewM+1,0).getDate();
+  for(let i=0;i<first;i++){const e=document.createElement('div');e.className='day out';g.appendChild(e);}
+  for(let d=1;d<=days;d++){
+    const s=viewY+'-'+pad(viewM+1)+'-'+pad(d);
+    const b=document.createElement('button');
+    b.className='day'+(map[s]?' '+map[s]:'')+(s===t?' today':'');
+    b.textContent=d;
+    b.setAttribute('aria-label',fmt(s)+(map[s]?' '+({period:'มีเมนส์',pred:'คาดว่าจะมีเมนส์',fertile:'ช่วงเจริญพันธุ์',ov:'วันตกไข่'})[map[s]]:''));
+    b.onclick=()=>openDay(s,map[s]);
+    g.appendChild(b);
+  }
+
+  // history
+  const h=$('hist'); h.innerHTML='';
+  const rev=st.p.slice().reverse();
+  if(!rev.length){h.innerHTML='<li class="empty">ยังไม่มีรอบที่บันทึก</li>';}
+  rev.forEach((x,i)=>{
+    const li=document.createElement('li');
+    const nextStart=rev[i-1]?rev[i-1].start:null;
+    const len=x.end?(diff(x.start,x.end)+1)+' วัน':(activePeriod()===x?'กำลังมี':'ไม่ได้ระบุวันหมด');
+    const cyc=nextStart?' · รอบนี้ '+diff(x.start,nextStart)+' วัน':'';
+    li.innerHTML='<div><div class="d"></div><div class="m"></div></div>';
+    li.querySelector('.d').textContent=fmt(x.start)+(x.end?' – '+fmt(x.end):'');
+    li.querySelector('.m').textContent='มา '+len+cyc;
+    const del=document.createElement('button');del.className='del';del.textContent='ลบ';
+    del.onclick=()=>{if(confirm('ลบรอบ '+fmt(x.start)+' ?')){state.periods=state.periods.filter(p=>p.start!==x.start);save();render();toast('ลบแล้ว');}};
+    li.appendChild(del); h.appendChild(li);
+  });
+}
+
+function drawRing(st,dayIn){
+  const svg=$('ring'), C=150, R=124, W=18, total=st.avgCycle;
+  const css=getComputedStyle(document.documentElement);
+  const col=n=>css.getPropertyValue(n).trim();
+  const pt=(frac,r)=>{const a=frac*2*Math.PI-Math.PI/2;return[C+r*Math.cos(a),C+r*Math.sin(a)];};
+  const arc=(f0,f1,color,w)=>{
+    if(f1-f0>=.999)return `<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="${color}" stroke-width="${w}"/>`;
+    const[x0,y0]=pt(f0,R),[x1,y1]=pt(f1,R),large=f1-f0>.5?1:0;
+    return `<path d="M${x0} ${y0} A${R} ${R} 0 ${large} 1 ${x1} ${y1}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round"/>`;
+  };
+  let h=`<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="${col('--line')}" stroke-width="${W}"/>`;
+  // period segment
+  h+=arc(0,Math.min(st.avgLen/total,1),col('--period-soft'),W);
+  // fertile window
+  const ov=total-14, f0=Math.max(ov-5,0)/total, f1=Math.min(ov+1,total)/total;
+  h+=arc(f0,f1,col('--fertile-soft'),W);
+  // ovulation mark
+  const[ox,oy]=pt((ov-.5)/total,R); h+=`<circle cx="${ox}" cy="${oy}" r="5" fill="${col('--fertile')}"/>`;
+  // ticks
+  for(let i=0;i<total;i++){const[a,b]=pt(i/total,R+W/2+4),[c,d]=pt(i/total,R+W/2+(i%7===0?10:7));h+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col('--line')}" stroke-width="${i%7===0?2:1}"/>`;}
+  // today marker
+  if(st.p.length&&dayIn>0){
+    const f=Math.min((dayIn-.5)/total,.999);
+    const[x,y]=pt(f,R);
+    h+=`<circle cx="${x}" cy="${y}" r="13" fill="${dayIn>total?col('--period'):col('--ink')}" stroke="${col('--surface')}" stroke-width="4"/>`;
+  }
+  svg.innerHTML=h;
+}
+
+/* ---------- actions ---------- */
+function startOn(s){
+  if(state.periods.some(p=>p.start===s)){toast('วันนี้บันทึกไว้แล้ว');return;}
+  // inside an existing logged period? ignore
+  const inside=state.periods.find(p=>p.end&&s>=p.start&&s<=p.end);
+  if(inside){toast('วันนี้อยู่ในรอบที่บันทึกไว้แล้ว');return;}
+  state.periods.push({start:s,end:null}); save(); render(); toast('บันทึกวันเริ่ม '+fmt(s));
+}
+function endOn(s){
+  const p=sorted().filter(x=>x.start<=s).pop();
+  if(!p){toast('ยังไม่มีวันเริ่มก่อนวันนี้');return;}
+  if(diff(p.start,s)>14){toast('ห่างจากวันเริ่มเกิน 14 วัน ลองเพิ่มเป็นรอบใหม่');return;}
+  const real=state.periods.find(x=>x.start===p.start); real.end=s; save(); render(); toast('บันทึกวันหมด '+fmt(s));
+}
+$('startToday').onclick=()=>startOn(today());
+$('endToday').onclick=()=>endOn(today());
+$('prev').onclick=()=>{viewM--;if(viewM<0){viewM=11;viewY--;}render();};
+$('next').onclick=()=>{viewM++;if(viewM>11){viewM=0;viewY++;}render();};
+
+function openDay(s,kind){
+  const dlg=$('dayDlg'), acts=$('dayActions');
+  $('dayTitle').textContent=fmt(s);
+  $('dayInfo').textContent=({period:'มีเมนส์',pred:'คาดว่าจะมีเมนส์',fertile:'ช่วงเจริญพันธุ์ (ประมาณ)',ov:'วันตกไข่ (ประมาณ)'})[kind]||'ไม่มีบันทึก';
+  acts.innerHTML='';
+  const add=(label,cls,fn)=>{const b=document.createElement('button');b.className='btn '+cls;b.textContent=label;b.onclick=()=>{fn();dlg.close();};acts.appendChild(b);};
+  const future=s>today();
+  const isStart=state.periods.find(p=>p.start===s);
+  if(isStart){
+    add('ลบรอบที่เริ่มวันนี้','btn-ghost',()=>{state.periods=state.periods.filter(p=>p.start!==s);save();render();toast('ลบแล้ว');});
+  }else if(!future){
+    add('เมนส์เริ่มวันนี้','btn-primary',()=>startOn(s));
+    const p=sorted().filter(x=>x.start<s).pop();
+    if(p&&diff(p.start,s)<=14)add('เมนส์หมดวันนี้','btn-ghost',()=>endOn(s));
+  }else{
+    const pe=document.createElement('p');pe.textContent='บันทึกได้เฉพาะวันนี้หรือวันที่ผ่านมา';acts.appendChild(pe);
+  }
+  add('ปิด','btn-ghost',()=>{});
+  dlg.showModal();
+}
+
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+
+$('openSettings').onclick=()=>{$('sName').value=state.name;$('sCycle').value=state.defCycle;$('sLen').value=state.defLen;$('setDlg').showModal();};
+$('saveSet').onclick=()=>{
+  state.name=$('sName').value.trim();
+  const c=parseInt($('sCycle').value,10), l=parseInt($('sLen').value,10);
+  if(c>=18&&c<=45)state.defCycle=c; if(l>=2&&l<=10)state.defLen=l;
+  save();render();$('setDlg').close();toast('บันทึกการตั้งค่าแล้ว');
+};
+$('clearAll').onclick=()=>{if(confirm('ลบข้อมูลทั้งหมด? กู้คืนไม่ได้ถ้าไม่ได้สำรองไว้')){state.periods=[];save();render();$('setDlg').close();toast('ลบข้อมูลทั้งหมดแล้ว');}};
+
+$('addPast').onclick=()=>{$('pStart').value='';$('pEnd').value='';$('pStart').max=today();$('pEnd').max=today();$('pastDlg').showModal();};
+$('savePast').onclick=()=>{
+  const s=$('pStart').value,e=$('pEnd').value;
+  if(!s){toast('ใส่วันแรกก่อน');return;}
+  if(s>today()){toast('วันแรกต้องไม่เกินวันนี้');return;}
+  if(e&&(e<s||diff(s,e)>14)){toast('วันสุดท้ายต้องอยู่หลังวันแรกไม่เกิน 14 วัน');return;}
+  if(state.periods.some(p=>p.start===s)){toast('มีรอบที่เริ่มวันนี้แล้ว');return;}
+  state.periods.push({start:s,end:e||null});save();render();$('pastDlg').close();toast('เพิ่มรอบ '+fmt(s)+' แล้ว');
+};
+
+$('exportBtn').onclick=()=>{
+  $('bkTitle').textContent='สำรองข้อมูล';
+  $('bkInfo').textContent='คัดลอกข้อความนี้เก็บไว้ ใช้กู้คืนบนเครื่องอื่นได้';
+  $('bkText').value=JSON.stringify(state);$('bkText').readOnly=true;
+  $('bkAction').textContent='คัดลอก';
+  $('bkAction').onclick=async()=>{try{await navigator.clipboard.writeText($('bkText').value);toast('คัดลอกแล้ว');}catch(e){$('bkText').select();toast('เลือกข้อความแล้ว กดคัดลอกเอง');}};
+  $('bkDlg').showModal();
+};
+$('importBtn').onclick=()=>{
+  $('bkTitle').textContent='กู้คืนข้อมูล';
+  $('bkInfo').textContent='วางข้อความที่สำรองไว้ ข้อมูลปัจจุบันจะถูกแทนที่';
+  $('bkText').value='';$('bkText').readOnly=false;
+  $('bkAction').textContent='กู้คืน';
+  $('bkAction').onclick=()=>{
+    try{
+      const d=JSON.parse($('bkText').value);
+      if(!Array.isArray(d.periods))throw 0;
+      const ok=d.periods.every(p=>/^\d{4}-\d{2}-\d{2}$/.test(p.start)&&(p.end===null||/^\d{4}-\d{2}-\d{2}$/.test(p.end)));
+      if(!ok)throw 0;
+      state={name:String(d.name||''),defCycle:+d.defCycle||28,defLen:+d.defLen||5,periods:d.periods};
+      save();render();$('bkDlg').close();toast('กู้คืนข้อมูลแล้ว');
+    }catch(e){toast('ข้อความไม่ถูกต้อง ตรวจว่าคัดลอกมาครบ');}
+  };
+  $('bkDlg').showModal();
+};
+
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200);}
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',render);
+render();
+})();
+</script>
+</body>
+</html>
